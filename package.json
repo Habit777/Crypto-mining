@@ -1,0 +1,12 @@
+{
+  "name": "webhash-stratum-bridge",
+  "version": "1.0.0",
+  "description": "WebSocket to Stratum TCP Bridge for Browser Crypto Mining",
+  "main": "bridge.js",
+  "scripts": {
+    "start": "node bridge.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
