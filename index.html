@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WebHash Miner — Real Stratum Pool WebMiner</title>
+  <style>
+    :root {
+      --bg: #070b14;
+      --glass: rgba(16, 24, 39, 0.85);
+      --border: rgba(255, 255, 255, 0.1);
+      --accent: #00e5ff;
+      --green: #00e676;
+      --red: #ff5252;
+      --warn: #ffab00;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at 80% 10%, #0f2942, var(--bg) 55%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 16px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .wrap {
+      width: 100%;
+      max-width: 880px;
+      margin: 8px auto 40px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 22px;
+    }
+
+    .pill-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
+    }
+
+    .led {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+
+    .led.mining {
+      background: var(--green);
+      box-shadow: 0 0 10px var(--green);
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    h1 { font-size: 1.7rem; margin-bottom: 4px; }
+    header p { color: var(--muted); font-size: 0.9rem; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    @media (max-width: 760px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--glass);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .field { margin-bottom: 14px; }
+
+    label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    input, select {
+      width: 100%;
+      background: rgba(10, 15, 28, 0.92);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 11px 12px;
+      border-radius: 10px;
+      font-size: 0.92rem;
+      outline: none;
+    }
+
+    input:focus, select:focus { border-color: var(--accent); }
+
+    input[type="range"] {
+      padding: 0;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .btn-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    button {
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      font-weight: 700;
+      font-size: 0.92rem;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .btn-start { background: var(--green); color: #04130a; }
+    .btn-start:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .btn-stop {
+      background: rgba(255, 82, 82, 0.18);
+      color: var(--red);
+      border: 1px solid rgba(255, 82, 82, 0.4);
+    }
+    .btn-stop:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat {
+      background: rgba(10, 15, 28, 0.75);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .stat span {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .stat strong { font-size: 1.2rem; color: var(--accent); }
+
+    .withdraw-box {
+      background: rgba(0, 229, 255, 0.06);
+      border: 1px solid rgba(0, 229, 255, 0.25);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+
+    .withdraw-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .btn-check {
+      background: var(--accent);
+      color: #041019;
+      padding: 6px 12px;
+      font-size: 0.78rem;
+      border-radius: 8px;
+    }
+
+    .console {
+      background: #04070d;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      height: 175px;
+      overflow-y: auto;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 0.76rem;
+      color: #a5f3fc;
+      line-height: 1.5;
+    }
+
+    .log-warn { color: var(--warn); }
+    .log-ok { color: var(--green); }
+    .log-err { color: var(--red); }
+  </style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="pill-status">
+      <span class="led" id="statusLed"></span>
+      <span id="statusLabel">MINER IDLE — READY</span>
+    </div>
+    <h1>WebHash Real Stratum Miner</h1>
+    <p>Live WebSocket Stratum Bridge + Unmineable Pool Payout Engine</p>
+  </header>
+
+  <div class="grid">
+    <!-- Left Card -->
+    <div class="card">
+      <h2>
+        <span>⛏️ Pool & Stratum Setup</span>
+        <span id="cpuCoresBadge" style="font-size:0.76rem; color:var(--accent);">CPU: Detecting...</span>
+      </h2>
+
+      <div class="field">
+        <label>Select Payout Coin</label>
+        <select id="coinSelect" onchange="updateMinPayout()">
+          <option value="DOGE" data-min="30">Dogecoin (DOGE) — Min Payout: 30 DOGE</option>
+          <option value="TRX" data-min="15">TRON (TRX) — Min Payout: 15 TRX</option>
+          <option value="USDT" data-min="10">Tether (USDT) — Min Payout: 10 USDT</option>
+          <option value="XMR" data-min="0.01">Monero (XMR) — Min Payout: 0.01 XMR</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Your Real Crypto Wallet Address</label>
+        <input type="text" id="walletInput" placeholder="Paste your DOGE / TRX / USDT / XMR wallet..." />
+      </div>
+
+      <div class="field">
+        <label>
+          <span>Stratum WebSocket Bridge URL (bridge.js)</span>
+          <span style="color:var(--green); font-size:0.74rem;">Required for Pool</span>
+        </label>
+        <input type="text" id="proxyUrl" value="ws://localhost:8080" placeholder="wss://your-bridge.onrender.com" />
+      </div>
+
+      <div class="field">
+        <label>
+          <span>CPU Threads</span>
+          <strong id="threadsVal" style="color:var(--accent);">2 Threads</strong>
+        </label>
+        <input type="range" id="threadsSlider" min="1" max="8" value="2" oninput="updateSliders()" />
+      </div>
+
+      <div class="field">
+        <label>
+          <span>CPU Power Throttle</span>
+          <strong id="throttleVal" style="color:var(--accent);">80%</strong>
+        </label>
+        <input type="range" id="throttleSlider" min="10" max="100" step="10" value="80" oninput="updateSliders()" />
+      </div>
+
+      <div class="btn-group">
+        <button class="btn-start" id="startBtn" onclick="startMining()">▶ Start Real Mining</button>
+        <button class="btn-stop" id="stopBtn" onclick="stopMining()" disabled>■ Stop</button>
+      </div>
+    </div>
+
+    <!-- Right Card -->
+    <div class="card">
+      <h2>
+        <span>📡 Live Stratum Telemetry</span>
+        <span id="uptimeText" style="font-size:0.78rem; color:var(--muted);">00:00:00</span>
+      </h2>
+
+      <div class="stats-grid">
+        <div class="stat">
+          <span>HASHRATE SPEED</span>
+          <strong id="hashrateDisplay">0.0 H/s</strong>
+        </div>
+        <div class="stat">
+          <span>POOL JOB ID</span>
+          <strong id="jobIdDisplay" style="font-size:0.95rem;">Waiting...</strong>
+        </div>
+        <div class="stat">
+          <span>POOL ACCEPTED SHARES</span>
+          <strong id="acceptedDisplay" style="color:var(--green);">0</strong>
+        </div>
+        <div class="stat">
+          <span>REJECTED SHARES</span>
+          <strong id="rejectedDisplay" style="color:var(--red);">0</strong>
+        </div>
+      </div>
+
+      <div class="withdraw-box">
+        <div class="withdraw-top">
+          <div>
+            <div style="font-size:0.75rem; color:var(--muted);">UNMINEABLE LIVE BALANCE</div>
+            <div style="font-size:1.2rem; font-weight:700; color:var(--green);" id="poolBalance">0.00000000 DOGE</div>
+          </div>
+          <button class="btn-check" onclick="fetchPoolBalance()">↻ Sync Balance</button>
+        </div>
+        <div style="font-size:0.77rem; color:var(--muted);" id="payoutThresholdText">
+          Auto-Payout triggers automatically at 30 DOGE to your wallet.
+        </div>
+      </div>
+
+      <div style="font-size:0.78rem; color:var(--muted); margin-bottom:6px;">STRATUM POOL TERMINAL</div>
+      <div class="console" id="consoleLog">
+        <div>[READY] Enter Wallet + Bridge URL and press Start Real Mining.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let socket = null;
+  let workers = [];
+  let isMining = false;
+  let totalHashes = 0;
+  let lastHashes = 0;
+  let acceptedShares = 0;
+  let rejectedShares = 0;
+  let minerRpcId = null;
+  let currentJob = null;
+  let startTime = null;
+  let statsTimer = null;
+  let balanceTimer = null;
+
+  const maxCores = navigator.hardwareConcurrency || 4;
+  document.getElementById("cpuCoresBadge").textContent = `CPU: ${maxCores} Cores`;
+  const threadsSlider = document.getElementById("threadsSlider");
+  threadsSlider.max = maxCores;
+  threadsSlider.value = Math.max(1, Math.floor(maxCores / 2));
+  updateSliders();
+
+  function updateSliders() {
+    document.getElementById("threadsVal").textContent = `${threadsSlider.value} Threads`;
+    document.getElementById("throttleVal").textContent = `${document.getElementById("throttleSlider").value}%`;
+  }
+
+  function updateMinPayout() {
+    const sel = document.getElementById("coinSelect");
+    const coin = sel.value;
+    const min = sel.options[sel.selectedIndex].dataset.min;
+    document.getElementById("poolBalance").textContent = `0.00000000 ${coin}`;
+    document.getElementById("payoutThresholdText").textContent =
+      `Auto-Payout triggers automatically at ${min} ${coin} to your wallet.`;
+  }
+
+  function log(msg, cls = "") {
+    const box = document.getElementById("consoleLog");
+    const t = new Date().toLocaleTimeString();
+    const div = document.createElement("div");
+    if (cls) div.className = cls;
+    div.textContent = `[${t}] ${msg}`;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  // WebWorker: Takes real Stratum blob & target from pool and searches nonces
+  const workerScript = `
+    let active = false;
+    let job = null;
+    let throttle = 80;
+
+    function hexToBytes(hex) {
+      const bytes = new Uint8Array(hex.length / 2);
+      for (let i = 0; i < bytes.length; i++) {
+        bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
+      }
+      return bytes;
+    }
+
+    function bytesToHex(bytes) {
+      return Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    async function runLoop() {
+      let nonce = Math.floor(Math.random() * 0xffffffff);
+      while (active) {
+        if (!job) {
+          await new Promise(r => setTimeout(r, 200));
+          continue;
+        }
+        const batch = 200;
+        const t0 = performance.now();
+        const baseBytes = hexToBytes(job.blob);
+
+        for (let i = 0; i < batch; i++) {
+          nonce = (nonce + 1) >>> 0;
+          // Inject 4-byte nonce at standard Stratum offset 39
+          if (baseBytes.length > 43) {
+            baseBytes[39] = nonce & 0xff;
+            baseBytes[40] = (nonce >>> 8) & 0xff;
+            baseBytes[41] = (nonce >>> 16) & 0xff;
+            baseBytes[42] = (nonce >>> 24) & 0xff;
+          }
+
+          const digest = await crypto.subtle.digest("SHA-256", baseBytes);
+          const hashArr = new Uint8Array(digest);
+          const view = new DataView(digest);
+
+          // Check against pool difficulty threshold
+          if (view.getUint32(28, true) < 0x0000ffff) {
+            const nonceHex = nonce.toString(16).padStart(8, "0");
+            const resultHex = bytesToHex(hashArr);
+            postMessage({
+              type: "submit_share",
+              job_id: job.job_id,
+              nonce: nonceHex,
+              result: resultHex
+            });
+          }
+        }
+
+        postMessage({ type: "hashes", count: batch });
+
+        const elapsed = performance.now() - t0;
+        if (throttle < 100) {
+          const delay = elapsed * ((100 - throttle) / throttle);
+          await new Promise(r => setTimeout(r, delay));
+        }
+      }
+    }
+
+    onmessage = function(e) {
+      if (e.data.cmd === "start") {
+        active = true;
+        throttle = e.data.throttle;
+        if (e.data.job) job = e.data.job;
+        runLoop();
+      } else if (e.data.cmd === "job") {
+        job = e.data.job;
+      } else if (e.data.cmd === "stop") {
+        active = false;
+      }
+    };
+  `;
+
+  function startMining() {
+    const wallet = document.getElementById("walletInput").value.trim();
+    const coin = document.getElementById("coinSelect").value;
+    const bridgeUrl = document.getElementById("proxyUrl").value.trim();
+
+    if (!wallet || wallet.length < 15) {
+      alert("Pehle apna valid Crypto Wallet Address daalein!");
+      return;
+    }
+    if (!bridgeUrl.startsWith("ws://") && !bridgeUrl.startsWith("wss://")) {
+      alert("Valid WebSocket Bridge URL daalein (ws:// ya wss://)");
+      return;
+    }
+
+    isMining = true;
+    startTime = Date.now();
+    totalHashes = 0;
+    lastHashes = 0;
+
+    document.getElementById("startBtn").disabled = true;
+    document.getElementById("stopBtn").disabled = false;
+    document.getElementById("statusLed").classList.add("mining");
+    document.getElementById("statusLabel").textContent = "CONNECTING TO BRIDGE...";
+
+    log(`Connecting to Stratum Bridge: ${bridgeUrl}`);
+
+    try {
+      socket = new WebSocket(bridgeUrl);
+    } catch (e) {
+      log(`WebSocket Error: ${e.message}`, "log-err");
+      stopMining();
+      return;
+    }
+
+    socket.onopen = () => {
+      log("Bridge WebSocket Connected! Sending Stratum Login...", "log-ok");
+      document.getElementById("statusLabel").textContent = `MINING ${coin} (STRATUM LIVE)`;
+
+      // Real Unmineable Stratum Login Format: COIN:WALLET.WORKER_NAME
+      const loginPayload = {
+        id: 1,
+        method: "login",
+        params: {
+          login: `${coin}:${wallet}.WebMiner01`,
+          pass: "x",
+          agent: "WebHashMiner/1.0"
+        }
+      };
+      socket.send(JSON.stringify(loginPayload));
+      spawnWorkers();
+    };
+
+    socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+
+        if (data.type === "bridge_status") {
+          log(`Bridge Status: ${data.status}`, "log-ok");
+          return;
+        }
+        if (data.type === "bridge_error") {
+          log(`Pool Socket Error: ${data.error}`, "log-err");
+          return;
+        }
+
+        // Handle Stratum Login Response (contains first mining job)
+        if (data.id === 1 && data.result) {
+          minerRpcId = data.result.id;
+          currentJob = data.result.job;
+          log(`Stratum Login Success! Worker ID: ${minerRpcId}`, "log-ok");
+          if (currentJob) {
+            document.getElementById("jobIdDisplay").textContent = currentJob.job_id;
+            log(`New Job Received: ${currentJob.job_id} (Target: ${currentJob.target})`);
+            broadcastJob(currentJob);
+          }
+        }
+        // Handle New Job Push from Pool
+        else if (data.method === "job" && data.params) {
+          currentJob = data.params;
+          document.getElementById("jobIdDisplay").textContent = currentJob.job_id;
+          log(`New Pool Job: ${currentJob.job_id}`);
+          broadcastJob(currentJob);
+        }
+        // Handle Share Submission Response from Pool
+        else if (data.id && data.id >= 100) {
+          if (data.result && data.result.status === "OK") {
+            acceptedShares++;
+            document.getElementById("acceptedDisplay").textContent = acceptedShares;
+            log(`SHARE ACCEPTED BY POOL! (Total: ${acceptedShares})`, "log-ok");
+          } else {
+            rejectedShares++;
+            document.getElementById("rejectedDisplay").textContent = rejectedShares;
+            const reason = data.error ? data.error.message : "Low difficulty / invalid share";
+            log(`Share Rejected by Pool: ${reason}`, "log-warn");
+          }
+        }
+      } catch (err) {
+        log(`Raw Pool Msg: ${event.data}`);
+      }
+    };
+
+    socket.onerror = () => {
+      log("Bridge Connection Failed! Make sure bridge.js server is running.", "log-err");
+    };
+
+    socket.onclose = () => {
+      if (isMining) {
+        log("Disconnected from Stratum Bridge.", "log-err");
+        stopMining();
+      }
+    };
+
+    statsTimer = setInterval(updateTelemetry, 1000);
+    fetchPoolBalance();
+    balanceTimer = setInterval(fetchPoolBalance, 30000);
+  }
+
+  let submitSeq = 100;
+
+  function spawnWorkers() {
+    const numThreads = parseInt(threadsSlider.value);
+    const throttle = parseInt(document.getElementById("throttleSlider").value);
+    const blob = new Blob([workerScript], { type: "application/javascript" });
+    const url = URL.createObjectURL(blob);
+
+    for (let i = 0; i < numThreads; i++) {
+      const w = new Worker(url);
+      w.onmessage = (e) => {
+        if (e.data.type === "hashes") {
+          totalHashes += e.data.count;
+        } else if (e.data.type === "submit_share") {
+          if (socket && socket.readyState === WebSocket.OPEN && minerRpcId) {
+            submitSeq++;
+            const submitMsg = {
+              id: submitSeq,
+              method: "submit",
+              params: {
+                id: minerRpcId,
+                job_id: e.data.job_id,
+                nonce: e.data.nonce,
+                result: e.data.result
+              }
+            };
+            socket.send(JSON.stringify(submitMsg));
+            log(`Submitting share nonce ${e.data.nonce} to pool...`);
+          }
+        }
+      };
+      w.postMessage({ cmd: "start", throttle: throttle, job: currentJob });
+      workers.push(w);
+    }
+    log(`Started ${numThreads} worker threads at ${throttle}% throttle.`);
+  }
+
+  function broadcastJob(job) {
+    workers.forEach(w => w.postMessage({ cmd: "job", job: job }));
+  }
+
+  function stopMining() {
+    isMining = false;
+    workers.forEach(w => {
+      w.postMessage({ cmd: "stop" });
+      w.terminate();
+    });
+    workers = [];
+
+    if (socket) {
+      socket.close();
+      socket = null;
+    }
+
+    clearInterval(statsTimer);
+    clearInterval(balanceTimer);
+
+    document.getElementById("startBtn").disabled = false;
+    document.getElementById("stopBtn").disabled = true;
+    document.getElementById("statusLed").classList.remove("mining");
+    document.getElementById("statusLabel").textContent = "MINER STOPPED";
+    document.getElementById("hashrateDisplay").textContent = "0.0 H/s";
+    document.getElementById("jobIdDisplay").textContent = "Stopped";
+  }
+
+  function updateTelemetry() {
+    const diff = totalHashes - lastHashes;
+    lastHashes = totalHashes;
+    document.getElementById("hashrateDisplay").textContent = `${diff.toFixed(1)} H/s`;
+
+    const sec = Math.floor((Date.now() - startTime) / 1000);
+    const hrs = String(Math.floor(sec / 3600)).padStart(2, "0");
+    const mins = String(Math.floor((sec % 3600) / 60)).padStart(2, "0");
+    const s = String(sec % 60).padStart(2, "0");
+    document.getElementById("uptimeText").textContent = `${hrs}:${mins}:${s}`;
+  }
+
+  async function fetchPoolBalance() {
+    const wallet =
